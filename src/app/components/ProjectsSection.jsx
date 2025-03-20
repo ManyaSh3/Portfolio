@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ProjectCard from "./ProjectCard";
 import ProjectTag from "./ProjectTag";
 import { motion } from "framer-motion";
@@ -20,7 +20,7 @@ const projectsData = [
     id: 2,
     title: "Library Management System",
     description:
-      "A digital platform designed to manage a library’s collection of e-books efficiently. Users can browse, rent, purchase, and download e-books in PDF format. The system also provides advanced administrative features.",
+      "A digital platform designed to manage a library's collection of e-books efficiently. Users can browse, rent, purchase, and download e-books in PDF format. The system also provides advanced administrative features.",
     image: "/images/projects/2.png",
     tag: ["All", "Web"],
     gitUrl: "https://github.com/ManyaSh3/library-management-system",
@@ -62,83 +62,139 @@ const projectsData = [
   },
 ];
 
-
 const ProjectsSection = () => {
   const [tag, setTag] = useState("All");
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Check if we're on mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Initial check
+    checkMobile();
+    
+    // Add listener for resize
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const handleTagChange = (newTag) => {
     if (tag !== newTag) {
-        setTag(newTag);
+      setTag(newTag);
     }
-};
-
-
+  };
 
   const filteredProjects = projectsData.filter((project) => project.tag.includes(tag));
 
+  // Conditional animation props based on device
+  const getAnimationProps = (enabled = true) => {
+    if (isMobile) {
+      return {}; // No animations on mobile
+    }
+    return enabled ? {
+      initial: { opacity: 0, y: 50 },
+      whileInView: { opacity: 1, y: 0 },
+      transition: { duration: 0.8 },
+      viewport: { once: false, amount: 0.1 }
+    } : {};
+  };
+
+  // Use motion.section or regular section based on device
+  const SectionComponent = isMobile ? 'section' : motion.section;
+  const DivComponent = isMobile ? 'div' : motion.div;
+  const HeadingComponent = isMobile ? 'h2' : motion.h2;
+
   return (
-    <motion.section
-        id="projects"
+    <SectionComponent
+      id="projects"
       className="py-12"
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-      viewport={{ once: false, amount: 0.2 }} // Removed `once: true` to allow repeated animations
+      {...getAnimationProps()}
     >
       {/* Animated Title */}
-      <motion.h2
+      <HeadingComponent
         className="text-center text-4xl font-bold text-white mt-4 mb-8 md:mb-12"
-        initial={{ opacity: 0, y: -50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        viewport={{ once: false, amount: 0.2 }}
+        {...(isMobile ? {} : {
+          initial: { opacity: 0, y: -50 },
+          whileInView: { opacity: 1, y: 0 },
+          transition: { duration: 0.8 },
+          viewport: { once: false, amount: 0.2 }
+        })}
       >
         My Projects
-      </motion.h2>
+      </HeadingComponent>
 
       {/* Animated Tags */}
-      <motion.div
-        className="text-white flex flex-row justify-center items-center gap-2 py-6"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        viewport={{ once: false, amount: 0.2 }} // Ensure animation retriggers on scroll
+      <DivComponent
+        className="text-white flex flex-wrap justify-center items-center gap-2 py-6"
+        {...(isMobile ? {} : {
+          initial: { opacity: 0 },
+          whileInView: { opacity: 1 },
+          transition: { duration: 0.8, delay: 0.2 },
+          viewport: { once: false, amount: 0.2 }
+        })}
       >
         {["All", "Web", "ML","Data Science"].map((category) => (
-          <motion.div key={category} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-            <ProjectTag onClick={handleTagChange} name={category} isSelected={tag === category} />
-          </motion.div>
+          <div key={category}>
+            {isMobile ? (
+              <ProjectTag onClick={handleTagChange} name={category} isSelected={tag === category} />
+            ) : (
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <ProjectTag onClick={handleTagChange} name={category} isSelected={tag === category} />
+              </motion.div>
+            )}
+          </div>
         ))}
-      </motion.div>
+      </DivComponent>
 
-      {/* Animated Grid */}
-      <motion.div
+      {/* Project Grid */}
+      <DivComponent
         className="grid md:grid-cols-3 gap-8 md:gap-12"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        {...(isMobile ? {} : {
+          initial: { opacity: 0 },
+          animate: { opacity: 1 },
+          transition: { duration: 0.5 }
+        })}
       >
-
         {filteredProjects.map((project) => (
-          <motion.div
-          key={project.id}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          >
-      
-            <ProjectCard
-              title={project.title}
-              description={project.description}
-              imgUrl={project.image}
-              tags={project.tag}
-              gitUrl={project.gitUrl}
-              previewUrl={project.previewUrl}
-              techStack={project.techStack}
-            />
-          </motion.div>
+          isMobile ? (
+            // Regular div for mobile
+            <div key={project.id}>
+              <ProjectCard
+                title={project.title}
+                description={project.description}
+                imgUrl={project.image}
+                tags={project.tag}
+                gitUrl={project.gitUrl}
+                previewUrl={project.previewUrl}
+                techStack={project.techStack}
+              />
+            </div>
+          ) : (
+            // Animated div for desktop
+            <motion.div
+              key={project.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              <ProjectCard
+                title={project.title}
+                description={project.description}
+                imgUrl={project.image}
+                tags={project.tag}
+                gitUrl={project.gitUrl}
+                previewUrl={project.previewUrl}
+                techStack={project.techStack}
+              />
+            </motion.div>
+          )
         ))}
-      </motion.div>
-    </motion.section>
+      </DivComponent>
+    </SectionComponent>
   );
 };
 
